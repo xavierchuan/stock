@@ -55,6 +55,7 @@ def cached_history(code: str) -> pd.DataFrame:
 st.title(PRODUCT_NAME)
 st.caption("免费体验版：仅1个战法（巴菲特）| 每天最多3次运行 | 仅显示前3只候选")
 st.warning(DISCLAIMER, icon="⚠️")
+st.info("官方声明：Lite 体验版长期免费（0元）。请勿购买该免费安装包。", icon="ℹ️")
 
 remaining = runs_remaining()
 st.metric("今日剩余运行次数", f"{remaining}/{MAX_DAILY_RUNS}")

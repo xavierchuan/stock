@@ -5,6 +5,10 @@
 - `start_lite.command`：Mac 双击启动
 - `start_lite.bat`：Windows 双击启动
 
+## 官方免费说明
+
+Lite 体验版官方长期免费（0元），请勿为本安装包付费。
+
 ## Mac 启动步骤
 
 1. 双击 `start_lite.command`
@@ -26,4 +30,3 @@ chmod +x start_lite.command
 ## 免责声明
 
 仅供研究与教育用途，不构成投资建议，不承诺收益。
-
