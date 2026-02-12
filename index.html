@@ -285,7 +285,7 @@
 
     .pricing {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
     }
 
@@ -309,6 +309,18 @@
       top: 10px;
       right: 10px;
       background: #12735f;
+      color: #fff;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .waitlist-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #b45309;
       color: #fff;
       border-radius: 999px;
       padding: 4px 9px;
@@ -489,21 +501,21 @@
   <header class="topbar">
     <div class="wrap topbar-inner">
       <div class="brand">Factor Lab<small>巴菲特战法（研究版）</small></div>
-      <a class="nav-btn" href="https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip" target="_blank" rel="noopener noreferrer">下载免费版(0元)</a>
+      <a class="nav-btn" data-link="download" href="https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip" target="_blank" rel="noopener noreferrer">下载免费版(0元)</a>
     </div>
   </header>
 
   <main class="wrap">
     <section class="hero">
       <div>
-        <span class="badge">免费体验已开放 · 本地研究工具</span>
-        <h1>不学量化，<br />3分钟做完一份股票体检</h1>
+        <span class="badge">你已收到试用包 · 现在开始跑通</span>
+        <h1>下载 ZIP，<br />3步跑通第一份体检卡</h1>
         <p>
-          选择战法，点击运行，系统自动给出综合分、风险标签和一句人话解释。你不需要写代码，
-          也不需要配置复杂参数。小红书评论区输入“试用”，即可领取体验版。
+          这页是给私信后用户的下载与上手页：先下载体验版并双击启动，再输入股票代码点击体检，
+          就能看到综合分、风险标签和一句话解释。跑不通可直接走39元安装服务承接。
         </p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip" target="_blank" rel="noopener noreferrer">下载免费体验版</a>
+          <a class="btn btn-primary" data-link="download" href="https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip" target="_blank" rel="noopener noreferrer">下载免费体验版（0元）</a>
           <a class="btn btn-secondary" href="#plans">查看版本与价格</a>
         </div>
         <div class="free-alert">官方声明：Lite 体验版长期免费（0元）。任何收费售卖 Lite 安装包均非官方行为。</div>
@@ -574,47 +586,47 @@
       <div class="steps">
         <div class="step">
           <strong>01</strong>
-          <h4>领取免费版</h4>
-          <p>在小红书评论区输入“试用”，私信领取体验版和上手清单。</p>
+          <h4>下载 ZIP 体验包</h4>
+          <p>点击本页“下载免费体验版（0元）”，保存并解压到本地文件夹。</p>
         </div>
         <div class="step">
           <strong>02</strong>
-          <h4>选择巴菲特战法</h4>
-          <p>点运行即可自动计算体检分、信号标签和风险提示。</p>
+          <h4>双击启动工具</h4>
+          <p>Windows 双击 <code>start_lite.bat</code>；Mac 双击 <code>start_lite.command</code>。</p>
         </div>
         <div class="step">
           <strong>03</strong>
-          <h4>按结果升级</h4>
-          <p>如果你需要完整榜单、结果导出和持续答疑，再升级研究版即可。</p>
+          <h4>输入代码点击体检</h4>
+          <p>输入股票代码后点击“运行 Lite 体检（消耗1次）”，查看Top3候选与风险解释。</p>
         </div>
       </div>
     </section>
 
     <section class="reveal">
-      <h2 class="section-title">小红书闭环路径</h2>
-      <p class="section-desc">优先站内转化：笔记评论领取试用，不做站外复杂跳转。</p>
+      <h2 class="section-title">下载后5分钟跑通</h2>
+      <p class="section-desc">以下是用户可执行指引，不是运营流程说明。</p>
       <div class="grid">
         <article class="panel">
-          <h3>笔记引流</h3>
-          <p>发布结果截图和教程图文，每条都固定CTA：评论“试用”。</p>
+          <h3>下载后检查清单</h3>
+          <p>确认已解压、启动文件存在、首次打开等待30-90秒加载，不要重复连点。</p>
         </article>
         <article class="panel">
-          <h3>私信发试用</h3>
-          <p>5分钟内私信发体验版链接、3步上手图和免责声明。</p>
+          <h3>常见报错处理</h3>
+          <p>Mac提示“无法打开”时按说明放行；端口占用时关闭旧窗口后重试；缺依赖按文档重装。</p>
         </article>
         <article class="panel">
-          <h3>低价承接</h3>
-          <p>24小时未跑通时承接39元安装答疑，再升级299研究版。</p>
+          <h3>跑不通怎么办</h3>
+          <p>可下单39元安装与参数设置服务（15分钟）。私信后24小时内安排并协助首次跑通。</p>
         </article>
       </div>
     </section>
 
     <section id="plans" class="reveal">
       <h2 class="section-title">版本与价格</h2>
-      <p class="section-desc">先免费体验，再按使用深度升级。免费版固定限制：1战法、每天3次、仅前3只候选。</p>
+      <p class="section-desc">先下载免费版跑通，再按你的需求升级。当前结构：0元体验 -> 39安装服务 -> 299研究版 -> 599 AI预约内测。</p>
       <div class="pricing">
         <article class="price-card">
-          <div class="tier">巴菲特战法 Lite 体验版</div>
+          <div class="tier">Lite 免费体验版</div>
           <p class="price">¥0 <small>/立即领取</small></p>
           <ul class="price-list">
             <li>1个战法（巴菲特）</li>
@@ -622,12 +634,24 @@
             <li>基础体检结果页（无导出）</li>
             <li>仅显示前3只候选</li>
           </ul>
-          <a class="btn btn-secondary" href="https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip" target="_blank" rel="noopener noreferrer">下载免费版</a>
+          <a class="btn btn-secondary" data-link="download" href="https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip" target="_blank" rel="noopener noreferrer">下载免费版</a>
+        </article>
+
+        <article class="price-card">
+          <div class="tier">安装与参数服务单</div>
+          <p class="price">¥39 <small>/15分钟承接</small></p>
+          <ul class="price-list">
+            <li>安装排障 + 参数初始化</li>
+            <li>首次运行协助跑通</li>
+            <li>仅工具使用教学</li>
+            <li>不含荐股与收益承诺</li>
+          </ul>
+          <a class="btn btn-secondary" data-link="xhs" href="https://xhslink.com/m/80EYiAQzo6G" target="_blank" rel="noopener noreferrer">咨询39服务单</a>
         </article>
 
         <article class="price-card popular">
           <span class="popular-tag">推荐</span>
-          <div class="tier">主商品（研究版）</div>
+          <div class="tier">研究版（主商品）</div>
           <p class="price">¥299 <small>/一次性买断</small></p>
           <ul class="price-list">
             <li>完整巴菲特战法工具</li>
@@ -635,19 +659,20 @@
             <li>使用说明 + 7天答疑</li>
             <li>30天小版本更新</li>
           </ul>
-          <a class="btn btn-primary" href="https://xhslink.com/m/80EYiAQzo6G" target="_blank" rel="noopener noreferrer">购买研究版</a>
+          <a class="btn btn-primary" data-link="xhs" href="https://xhslink.com/m/80EYiAQzo6G" target="_blank" rel="noopener noreferrer">购买研究版</a>
         </article>
 
         <article class="price-card">
-          <div class="tier">升级款（增强包）</div>
-          <p class="price">¥599 <small>/进阶用户</small></p>
+          <span class="waitlist-tag">预约内测</span>
+          <div class="tier">AI研究助理版</div>
+          <p class="price">¥599 <small>/全流程助理</small></p>
           <ul class="price-list">
-            <li>3套策略模板</li>
-            <li>组合对比回测</li>
-            <li>30天参数更新</li>
-            <li>30天答疑支持</li>
+            <li>AI结果解读与研究摘要</li>
+            <li>风险提示与观察清单</li>
+            <li>交互问答式研究陪跑</li>
+            <li>先预约，不承诺即时交付</li>
           </ul>
-          <a class="btn btn-secondary" href="https://xhslink.com/m/80EYiAQzo6G" target="_blank" rel="noopener noreferrer">购买增强包</a>
+          <a class="btn btn-secondary" data-link="ai_waitlist" href="https://xhslink.com/m/80EYiAQzo6G" target="_blank" rel="noopener noreferrer">预约AI内测</a>
         </article>
       </div>
       <div class="note">
@@ -656,42 +681,68 @@
     </section>
 
     <section class="reveal">
-      <h2 class="section-title">为什么要升级研究版</h2>
-      <p class="section-desc">当你需要完整榜单、结果导出和持续答疑时，建议从免费版升级到299研究版。</p>
+      <h2 class="section-title">版本能力对比</h2>
+      <p class="section-desc">按当前需求选版本：先跑通免费版，再决定用39承接、299完整功能，或预约AI全流程助理。</p>
       <div class="compare-wrap">
         <table class="compare-table">
           <thead>
             <tr>
               <th>能力项</th>
-              <th>Lite 体验版（免费）</th>
+              <th>Lite（0元）</th>
+              <th>安装服务（39）</th>
               <th>研究版（299）</th>
+              <th>AI助理版（599预约）</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>战法数量</td>
-              <td>仅巴菲特战法 1 套</td>
-              <td>完整巴菲特战法工具</td>
+              <td>巴菲特战法 1 套</td>
+              <td>跟随Lite</td>
+              <td class="compare-yes">完整巴菲特战法工具</td>
+              <td class="compare-yes">完整战法 + AI解读</td>
             </tr>
             <tr>
               <td>每日运行次数</td>
               <td>最多 3 次</td>
+              <td>跟随Lite</td>
+              <td class="compare-yes">不限（按本地性能）</td>
               <td class="compare-yes">不限（按本地性能）</td>
             </tr>
             <tr>
               <td>候选展示范围</td>
               <td>仅前 3 只候选</td>
+              <td>跟随Lite</td>
               <td class="compare-yes">完整榜单</td>
+              <td class="compare-yes">完整榜单 + AI优先级建议</td>
             </tr>
             <tr>
               <td>结果导出</td>
               <td class="compare-no">不支持</td>
+              <td class="compare-no">不支持</td>
+              <td class="compare-yes">支持</td>
               <td class="compare-yes">支持</td>
             </tr>
             <tr>
-              <td>使用支持</td>
+              <td>安装答疑</td>
+              <td>自助</td>
+              <td class="compare-yes">15分钟人工承接</td>
+              <td>含7天答疑</td>
+              <td>含AI陪跑答疑</td>
+            </tr>
+            <tr>
+              <td>AI解读与陪跑</td>
+              <td class="compare-no">不支持</td>
+              <td class="compare-no">不支持</td>
+              <td class="compare-no">不支持</td>
+              <td class="compare-yes">支持（预约内测）</td>
+            </tr>
+            <tr>
+              <td>更新支持</td>
               <td>基础上手说明</td>
+              <td>单次服务复核</td>
               <td>7天答疑 + 30天小版本更新</td>
+              <td>预约后按内测批次开放</td>
             </tr>
           </tbody>
         </table>
@@ -702,24 +753,24 @@
       <h2 class="section-title">常见问题</h2>
       <div class="faq">
         <details>
-          <summary>这个工具会直接告诉我买卖点吗？</summary>
-          <p>不会。它输出的是研究评分和风险解释，帮助你独立判断。</p>
+          <summary>免费版为什么要限制1战法、3次、前3只？</summary>
+          <p>免费版用于验证流程是否适合你，先确保你能跑通、看懂结果。需要完整榜单和导出时再升级即可。</p>
         </details>
         <details>
-          <summary>19-39元服务单到底是什么？</summary>
-          <p>是安装答疑与参数初始化服务，包含首次运行排障，不包含荐股服务。</p>
+          <summary>Mac 下载后提示“无法打开”怎么办？</summary>
+          <p>先右键启动文件选择“打开”，若仍拦截再按系统提示放行。我们也提供39元安装承接服务协助你跑通。</p>
         </details>
         <details>
-          <summary>免费版为什么会有次数和展示限制？</summary>
-          <p>免费版用于体验流程，帮你先验证是否适合。需要完整榜单和导出功能时再升级研究版。</p>
+          <summary>39元服务单具体解决什么问题？</summary>
+          <p>它只负责安装排障、参数初始化和首次运行讲解，不提供买卖建议，不承诺收益。</p>
         </details>
         <details>
-          <summary>有人卖这个 Lite 安装包靠谱吗？</summary>
-          <p>不建议购买。Lite 体验版官方长期免费（0元），请以本页下载链接为准。</p>
+          <summary>AI研究助理版现在是直接购买吗？</summary>
+          <p>目前是预约内测阶段。你可先私信预约，确认批次后再安排开通，不承诺即时交付。</p>
         </details>
         <details>
-          <summary>我需要会编程吗？</summary>
-          <p>不需要，普通用户按说明操作即可。你只要会输入股票代码。</p>
+          <summary>这个工具会给买卖点或保证收益吗？</summary>
+          <p>不会。仅供研究与教育用途，不构成投资建议，也不承诺收益。</p>
         </details>
       </div>
     </section>
@@ -731,6 +782,24 @@
   </main>
 
   <script>
+    const DOWNLOAD_URL = "https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip";
+    const XHS_URL = "https://xhslink.com/m/80EYiAQzo6G";
+    const AI_WAITLIST_URL = XHS_URL;
+
+    const LINK_MAP = {
+      download: DOWNLOAD_URL,
+      xhs: XHS_URL,
+      ai_waitlist: AI_WAITLIST_URL,
+    };
+
+    document.querySelectorAll("[data-link]").forEach((el) => {
+      const key = el.getAttribute("data-link");
+      const url = LINK_MAP[key];
+      if (url) {
+        el.setAttribute("href", url);
+      }
+    });
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
