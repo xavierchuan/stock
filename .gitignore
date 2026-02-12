@@ -8,6 +8,10 @@ __pycache__/
 
 # Local caches and generated artifacts
 lite_tool/dist/staging/
+lite_tool/build_exec/
+lite_tool/dist_exec/
+lite_tool/build_signed/
+lite_tool/dist_signed/
 *.log
 
 # Secrets and local license material

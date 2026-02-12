@@ -86,6 +86,54 @@ python3 /Users/chuan/Documents/Projects/Business/stock/lite_tool/issue_license.p
 
 把可执行文件目录 + `license.key` 一起发给用户即可。
 
+## macOS 签名 + Notarize（Apple Developer）
+
+你现在这个账号可以走完整流程，但需要先在 Apple Developer 里申请并安装 `Developer ID Application` 证书。
+
+先确认本机证书：
+
+```bash
+security find-identity -v -p codesigning
+```
+
+如果结果里没有 `Developer ID Application: ...`，先去证书后台创建并导入到钥匙串，再继续。
+
+### 1) 存储 notarytool 凭据（只做一次）
+
+```bash
+TEAM_ID=你的TeamID \
+APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx \
+bash /Users/chuan/Documents/Projects/Business/stock/lite_tool/setup_notary_profile.sh
+```
+
+说明：
+- `APP_SPECIFIC_PASSWORD` 是 Apple ID 的 app 专用密码，不是登录密码
+- 默认 profile 名是 `AC_NOTARY`，可用 `KEYCHAIN_PROFILE` 自定义
+
+### 2) 构建 `.app` 并签名、notarize、staple
+
+```bash
+TEAM_ID=你的TeamID \
+CERT_NAME='Developer ID Application: 你的名字 (TEAMID)' \
+bash /Users/chuan/Documents/Projects/Business/stock/lite_tool/build_sign_notarize_app.sh
+```
+
+产物目录：
+
+`/Users/chuan/Documents/Projects/Business/stock/lite_tool/dist_signed/`
+
+主要文件：
+- `BuffettLite.app`
+- `BuffettLite.app.zip`（notarize 提交包）
+
+### 3) 快速调试（先只打包签名，不提审）
+
+```bash
+CERT_NAME='Developer ID Application: 你的名字 (TEAMID)' \
+SKIP_NOTARIZE=1 \
+bash /Users/chuan/Documents/Projects/Business/stock/lite_tool/build_sign_notarize_app.sh
+```
+
 ## 使用说明
 
 1. 选择候选池来源（自选股票池/自动候选池）
