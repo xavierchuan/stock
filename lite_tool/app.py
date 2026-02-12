@@ -187,12 +187,13 @@ if submitted:
         candidates = [Candidate(code=c, name=name_map.get(c, c)) for c in codes]
     else:
         try:
-            candidates = cached_auto_candidates(limit=auto_limit)
-        except DataProviderError as exc:
-            st.error(str(exc))
+            with st.spinner("正在获取热门候选股票，首次可能需要30-60秒，请稍等..."):
+                candidates = cached_auto_candidates(limit=auto_limit)
+        except DataProviderError:
+            st.error("暂时没拿到自动候选池数据，请稍后重试。")
             st.stop()
-        except Exception as exc:  # pragma: no cover
-            st.error(f"自动候选池加载失败：{exc}")
+        except Exception:  # pragma: no cover
+            st.error("自动候选池加载失败，请稍后重试。")
             st.stop()
 
     st.write(f"本次候选池数量：{len(candidates)}")

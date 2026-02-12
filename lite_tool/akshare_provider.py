@@ -76,6 +76,34 @@ def _clean_name(raw: object) -> str:
 
 
 class AKShareProvider:
+    def _auto_cache_paths(self, cache_dir: Path, limit: int) -> List[Path]:
+        exact = sorted(cache_dir.glob(f"auto_candidates_*_{limit}.csv"), reverse=True)
+        if exact:
+            return [p for p in exact if p.is_file()]
+        return [p for p in sorted(cache_dir.glob("auto_candidates_*.csv"), reverse=True) if p.is_file()]
+
+    def _load_auto_candidates_from_cache(self, cache_dir: Path, limit: int) -> List[Candidate]:
+        for path in self._auto_cache_paths(cache_dir, limit):
+            try:
+                cached = pd.read_csv(path, dtype=str)
+            except Exception:
+                continue
+            if cached.empty or "code" not in cached.columns:
+                continue
+            name_col = "name" if "name" in cached.columns else None
+            candidates: List[Candidate] = []
+            for _, row in cached.iterrows():
+                code = str(row["code"]).strip()
+                if not code or not code.isdigit() or len(code) != 6:
+                    continue
+                name = _clean_name(row[name_col]) if name_col else ""
+                candidates.append(Candidate(code=code, name=name or code))
+                if len(candidates) >= limit:
+                    break
+            if candidates:
+                return candidates
+        return []
+
     def _fetch_spot_dataframe(self) -> pd.DataFrame:
         ak = _import_akshare()
         errors: List[str] = []
@@ -180,14 +208,18 @@ class AKShareProvider:
         today_key = date.today().strftime("%Y%m%d")
         cache_path = cache_dir / f"auto_candidates_{today_key}_{limit}.csv"
         if cache_path.exists():
-            cached = pd.read_csv(cache_path, dtype=str)
-            if not cached.empty:
-                return [
-                    Candidate(code=row["code"], name=row["name"])
-                    for _, row in cached.iterrows()
-                ]
+            today_cached = self._load_auto_candidates_from_cache(cache_dir, limit=limit)
+            if today_cached:
+                return today_cached
 
-        spot = self._fetch_spot_dataframe().copy()
+        try:
+            spot = self._fetch_spot_dataframe().copy()
+        except Exception as exc:
+            fallback = self._load_auto_candidates_from_cache(cache_dir, limit=limit)
+            if fallback:
+                return fallback
+            raise DataProviderError(f"自动候选池加载失败：{exc}") from exc
+
         code_col = _pick_first_existing(spot, ["代码", "symbol"])
         name_col = _pick_first_existing(spot, ["名称", "name"])
         turnover_col = None
