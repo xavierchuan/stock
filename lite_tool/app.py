@@ -4,7 +4,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 import pandas as pd
 import streamlit as st
@@ -153,7 +153,17 @@ if submitted:
         if len(codes) > MAX_UNIVERSE_SIZE:
             st.info(f"免费版最多评估{MAX_UNIVERSE_SIZE}只，已自动截断。")
             codes = codes[:MAX_UNIVERSE_SIZE]
-        candidates = [Candidate(code=c, name=f"股票{c}") for c in codes]
+        name_map: Dict[str, str] = {}
+        try:
+            name_map = provider.resolve_names(codes)
+        except Exception:  # pragma: no cover
+            name_map = {}
+        unresolved = [code for code in codes if code not in name_map]
+        if unresolved:
+            st.info(
+                f"有 {len(unresolved)} 只股票名称暂未解析，已用代码展示，不影响体检结果。"
+            )
+        candidates = [Candidate(code=c, name=name_map.get(c, c)) for c in codes]
     else:
         try:
             candidates = cached_auto_candidates(limit=auto_limit)

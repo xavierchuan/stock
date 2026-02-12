@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
 import time
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List
 
 import pandas as pd
 
@@ -67,21 +67,18 @@ def _pick_first_existing(df: pd.DataFrame, columns: List[str]) -> str:
     raise DataProviderError(f"数据字段异常，未找到候选字段: {columns}")
 
 
-class AKShareProvider:
-    def get_auto_candidates(self, limit: int) -> List[Candidate]:
-        ak = _import_akshare()
-        cache_dir = _ensure_cache_dir()
-        today_key = date.today().strftime("%Y%m%d")
-        cache_path = cache_dir / f"auto_candidates_{today_key}_{limit}.csv"
-        if cache_path.exists():
-            cached = pd.read_csv(cache_path, dtype=str)
-            if not cached.empty:
-                return [
-                    Candidate(code=row["code"], name=row["name"])
-                    for _, row in cached.iterrows()
-                ]
+def _clean_name(raw: object) -> str:
+    name = str(raw).strip()
+    if not name or name.lower() == "nan":
+        return ""
+    # Some quote feeds include spacing in Chinese names (e.g. "五 粮 液").
+    return "".join(name.split())
 
-        errors = []
+
+class AKShareProvider:
+    def _fetch_spot_dataframe(self) -> pd.DataFrame:
+        ak = _import_akshare()
+        errors: List[str] = []
         df = None
         if hasattr(ak, "stock_zh_a_spot_em"):
             try:
@@ -96,9 +93,102 @@ class AKShareProvider:
         if df is None or df.empty:
             detail = " | ".join(errors) if errors else "未知错误"
             raise DataProviderError(f"AKShare 未返回A股行情数据。{detail}")
+        return df
 
-        spot = df.copy()
-        code_col = _pick_first_existing(spot, ["代码", "symbol", "代码"])
+    def _load_name_cache(self, path: Path) -> Dict[str, str]:
+        if not path.exists():
+            return {}
+        try:
+            df = pd.read_csv(path, dtype=str)
+        except Exception:
+            return {}
+        if "code" not in df.columns or "name" not in df.columns:
+            return {}
+
+        code_series = df["code"].astype(str).str.extract(r"(\d{6})", expand=False)
+        name_series = df["name"].astype(str).map(_clean_name)
+        name_map: Dict[str, str] = {}
+        for code, name in zip(code_series, name_series):
+            if not isinstance(code, str):
+                continue
+            if not name:
+                continue
+            name_map[code] = name
+        return name_map
+
+    def _write_name_cache(self, path: Path, name_map: Dict[str, str]) -> None:
+        rows = [{"code": code, "name": name} for code, name in sorted(name_map.items())]
+        pd.DataFrame(rows).to_csv(path, index=False, encoding="utf-8")
+
+    def _name_cache_paths(self, cache_dir: Path) -> List[Path]:
+        return [p for p in sorted(cache_dir.glob("stock_name_map_*.csv"), reverse=True) if p.is_file()]
+
+    def resolve_names(self, codes: List[str]) -> Dict[str, str]:
+        normalized_codes: List[str] = []
+        for code in codes:
+            try:
+                normalized_codes.append(normalize_symbol(code))
+            except ValueError:
+                continue
+        if not normalized_codes:
+            return {}
+
+        cache_dir = _ensure_cache_dir()
+        today_key = date.today().strftime("%Y%m%d")
+        today_cache_path = cache_dir / f"stock_name_map_{today_key}.csv"
+
+        name_map = self._load_name_cache(today_cache_path)
+        unresolved = [c for c in normalized_codes if c not in name_map]
+
+        if unresolved:
+            live_map: Dict[str, str] = {}
+            try:
+                spot = self._fetch_spot_dataframe().copy()
+                code_col = _pick_first_existing(spot, ["代码", "symbol"])
+                name_col = _pick_first_existing(spot, ["名称", "name"])
+                spot[code_col] = spot[code_col].astype(str).str.extract(r"(\d{6})", expand=False)
+                spot[name_col] = spot[name_col].astype(str).map(_clean_name)
+                spot = spot.dropna(subset=[code_col, name_col])
+                for _, row in spot.iterrows():
+                    code = str(row[code_col])
+                    name = _clean_name(row[name_col])
+                    if not code or not code.isdigit() or len(code) != 6:
+                        continue
+                    if not name:
+                        continue
+                    live_map[code] = name
+                if live_map:
+                    self._write_name_cache(today_cache_path, live_map)
+                    for code in unresolved:
+                        if code in live_map:
+                            name_map[code] = live_map[code]
+            except Exception:
+                fallback_paths = self._name_cache_paths(cache_dir)
+                for fallback_path in fallback_paths:
+                    fallback_map = self._load_name_cache(fallback_path)
+                    for code in unresolved:
+                        if code in fallback_map:
+                            name_map[code] = fallback_map[code]
+                    unresolved = [c for c in unresolved if c not in name_map]
+                    if not unresolved:
+                        break
+
+        return {code: name_map[code] for code in normalized_codes if code in name_map}
+
+    def get_auto_candidates(self, limit: int) -> List[Candidate]:
+        cache_dir = _ensure_cache_dir()
+        today_key = date.today().strftime("%Y%m%d")
+        cache_path = cache_dir / f"auto_candidates_{today_key}_{limit}.csv"
+        if cache_path.exists():
+            cached = pd.read_csv(cache_path, dtype=str)
+            if not cached.empty:
+                return [
+                    Candidate(code=row["code"], name=row["name"])
+                    for _, row in cached.iterrows()
+                ]
+
+        spot = self._fetch_spot_dataframe().copy()
+        code_col = _pick_first_existing(spot, ["代码", "symbol"])
         name_col = _pick_first_existing(spot, ["名称", "name"])
         turnover_col = None
         for candidate_col in ["成交额", "amount", "成交量", "volume"]:
@@ -116,7 +206,7 @@ class AKShareProvider:
 
         top = spot.head(limit)
         candidates = [
-            Candidate(code=row[code_col], name=str(row[name_col]))
+            Candidate(code=row[code_col], name=_clean_name(row[name_col]) or str(row[code_col]))
             for _, row in top.iterrows()
         ]
         pd.DataFrame([{"code": x.code, "name": x.name} for x in candidates]).to_csv(
