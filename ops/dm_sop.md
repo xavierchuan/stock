@@ -13,9 +13,9 @@
 
 你好，我把`巴菲特战法 Lite 体验版`发你：
 1) 试用编号（trial_id）：`<例如 T20260213-001>`
-2) 下载链接：`<替换成 buffett_lite_trial_xxxxxxxx.zip 的链接>`
+2) 下载链接：`https://github.com/xavierchuan/stock/releases/download/v0.1.0-lite/buffett_lite_trial_20260212.zip`
 3) 上手3步：下载 -> 运行 -> 输入代码点“体检”
-4) 使用说明：`<替换你的说明链接>`
+4) 使用说明：`https://xavierchuan.github.io/stock/`
 
 免费版说明：仅1个战法、每天最多3次运行、仅显示前3只候选。
 
