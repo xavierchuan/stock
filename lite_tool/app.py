@@ -131,13 +131,14 @@ if remaining <= 0:
     st.error("今天的免费运行次数已用完。明天会自动恢复3次。")
     st.stop()
 
+universe_mode = st.radio(
+    "候选池来源",
+    options=["自选股票池", "自动候选池（按成交额）"],
+    index=1,
+    horizontal=True,
+)
+
 with st.form("lite_form"):
-    universe_mode = st.radio(
-        "候选池来源",
-        options=["自选股票池", "自动候选池（按成交额）"],
-        index=1,
-        horizontal=True,
-    )
     input_codes = ""
     auto_limit = 20
     if universe_mode == "自选股票池":
