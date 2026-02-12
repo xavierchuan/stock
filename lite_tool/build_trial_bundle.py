@@ -31,6 +31,7 @@ def build_bundle() -> Path:
         LITE_DIR / "akshare_provider.py",
         LITE_DIR / "config.py",
         LITE_DIR / "limits.py",
+        LITE_DIR / "licensing.py",
         LITE_DIR / "scoring.py",
         LITE_DIR / "__init__.py",
         LITE_DIR / "README.md",

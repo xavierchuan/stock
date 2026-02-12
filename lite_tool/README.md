@@ -36,6 +36,56 @@ python3 /Users/chuan/Documents/Projects/Business/stock/lite_tool/build_trial_bun
 - Mac：`start_lite.command`
 - Windows：`start_lite.bat`
 
+## 可执行文件 + 授权校验（不发源码）
+
+### 1) 安装打包依赖
+
+```bash
+pip install -r /Users/chuan/Documents/Projects/Business/stock/requirements_build.txt
+```
+
+### 2) 生成密钥（只做一次）
+
+```bash
+python3 /Users/chuan/Documents/Projects/Business/stock/lite_tool/generate_keys.py
+cp ~/.factor_lab_keys/public_key.pem /Users/chuan/Documents/Projects/Business/stock/lite_tool/public_key.pem
+```
+
+说明：
+- `private_key.pem` 只留在你本机，不要上传仓库
+- `public_key.pem` 用于应用内验签（本地文件，已在 `.gitignore` 中）
+
+### 3) 构建可执行文件
+
+```bash
+python3 /Users/chuan/Documents/Projects/Business/stock/lite_tool/build_executable.py --clean
+```
+
+输出目录：
+
+`/Users/chuan/Documents/Projects/Business/stock/lite_tool/dist_exec/`
+
+### 4) 给用户签发授权文件
+
+先拿用户机器码（或让用户运行程序看授权页面提示）：
+
+```bash
+python3 /Users/chuan/Documents/Projects/Business/stock/lite_tool/show_machine_code.py
+```
+
+签发 `license.key`：
+
+```bash
+python3 /Users/chuan/Documents/Projects/Business/stock/lite_tool/issue_license.py \
+  --private-key ~/.factor_lab_keys/private_key.pem \
+  --license-id T20260212-001 \
+  --days 30 \
+  --machine-code <用户机器码> \
+  --out /Users/chuan/Documents/Projects/Business/stock/license.key
+```
+
+把可执行文件目录 + `license.key` 一起发给用户即可。
+
 ## 使用说明
 
 1. 选择候选池来源（自选股票池/自动候选池）

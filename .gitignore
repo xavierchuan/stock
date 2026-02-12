@@ -10,3 +10,8 @@ __pycache__/
 lite_tool/dist/staging/
 *.log
 
+# Secrets and local license material
+lite_tool/public_key.pem
+private_key.pem
+license.key
+.local_keys/

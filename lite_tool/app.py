@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -16,12 +17,47 @@ if str(PROJECT_ROOT) not in sys.path:
 from lite_tool.akshare_provider import AKShareProvider, Candidate, DataProviderError
 from lite_tool.config import DISCLAIMER, MAX_DAILY_RUNS, MAX_UNIVERSE_SIZE, PRODUCT_NAME
 from lite_tool.limits import consume_run, runs_remaining
+from lite_tool.licensing import (
+    LicenseError,
+    get_machine_code,
+    resolve_license_path,
+    resolve_public_key_path,
+    verify_license_file,
+)
 from lite_tool.scoring import evaluate_candidate
 
 
 st.set_page_config(page_title=PRODUCT_NAME, layout="wide")
 
 provider = AKShareProvider()
+
+
+def require_license_enabled() -> bool:
+    return os.getenv("LITE_REQUIRE_LICENSE", "0").strip().lower() in {"1", "true", "yes"}
+
+
+def render_license_gate() -> None:
+    machine_code = get_machine_code()
+    key_path = resolve_public_key_path()
+    lic_path = resolve_license_path()
+
+    st.subheader("授权验证")
+    st.caption(f"设备码：`{machine_code}`")
+
+    if key_path is None:
+        st.error("未找到 public_key.pem，无法校验授权。")
+        st.stop()
+    if lic_path is None:
+        st.error("未找到 license.key。请联系服务方获取授权文件后重试。")
+        st.stop()
+
+    try:
+        lic = verify_license_file(lic_path, key_path, machine_code=machine_code)
+    except LicenseError as exc:
+        st.error(f"授权校验失败：{exc}")
+        st.stop()
+
+    st.success(f"授权有效：{lic.license_id}（到期日 {lic.expires_at}）")
 
 
 def parse_codes(raw_text: str) -> List[str]:
@@ -56,6 +92,11 @@ st.title(PRODUCT_NAME)
 st.caption("免费体验版：仅1个战法（巴菲特）| 每天最多3次运行 | 仅显示前3只候选")
 st.warning(DISCLAIMER, icon="⚠️")
 st.info("官方声明：Lite 体验版长期免费（0元）。请勿购买该免费安装包。", icon="ℹ️")
+
+if require_license_enabled():
+    render_license_gate()
+else:
+    st.caption(f"当前为开放试用模式（未启用授权校验）。设备码：`{get_machine_code()}`")
 
 remaining = runs_remaining()
 st.metric("今日剩余运行次数", f"{remaining}/{MAX_DAILY_RUNS}")
