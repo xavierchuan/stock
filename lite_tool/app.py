@@ -15,7 +15,16 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from lite_tool.akshare_provider import AKShareProvider, Candidate, DataProviderError
-from lite_tool.config import DISCLAIMER, MAX_DAILY_RUNS, MAX_UNIVERSE_SIZE, PRODUCT_NAME
+from lite_tool.config import (
+    DISCLAIMER,
+    FACTOR_HELP_TEXT,
+    MAX_DAILY_RUNS,
+    MAX_UNIVERSE_SIZE,
+    METRIC_HELP_TEXT,
+    PRODUCT_NAME,
+    SIGNAL_DISPLAY_MAP,
+    XHS_NOTES_URL,
+)
 from lite_tool.limits import consume_run, runs_remaining
 from lite_tool.licensing import (
     LicenseError,
@@ -91,6 +100,10 @@ def parse_codes(raw_text: str) -> List[str]:
     return deduped
 
 
+def display_signal(raw_signal: str) -> str:
+    return SIGNAL_DISPLAY_MAP.get(raw_signal, raw_signal)
+
+
 @st.cache_data(ttl=900, show_spinner=False)
 def cached_auto_candidates(limit: int) -> List[Candidate]:
     return provider.get_auto_candidates(limit=limit)
@@ -122,6 +135,7 @@ with st.form("lite_form"):
     universe_mode = st.radio(
         "候选池来源",
         options=["自选股票池", "自动候选池（按成交额）"],
+        index=1,
         horizontal=True,
     )
     input_codes = ""
@@ -190,60 +204,87 @@ if submitted:
     if not results:
         st.error("本次未生成有效结果，请稍后重试。")
         if errors:
-            st.write("错误摘要：")
-            st.code("\n".join(errors[:10]))
+            st.info("本次数据源波动较大，建议稍后重试。")
         st.stop()
 
     consume_run()
 
     df = pd.DataFrame(results).sort_values("score", ascending=False).reset_index(drop=True)
     top3 = df.head(3).copy()
-    display = top3[
-        [
-            "code",
-            "name",
-            "score",
-            "signal",
-            "risk_tag",
-            "return_60d",
-            "annual_volatility",
-            "max_drawdown",
-        ]
-    ].rename(
+    top3["signal_display"] = top3["signal"].map(display_signal)
+
+    best = top3.iloc[0]
+    best_signal = str(best["signal_display"])
+    review_tip = "建议做二次复核（结合行业与基本面）"
+    if best_signal == "先回避" or str(best["risk_tag"]) == "高风险":
+        review_tip = "建议先回避高波动，再做复核"
+
+    st.subheader("先看结论（新手版）")
+    st.caption(
+        "这是一个股票体检和候选筛选工具，帮你先看风险与优先级，不直接给买卖指令。"
+    )
+    st.caption(
+        "巴菲特战法 Lite 是一个巴菲特风格的简化体检：用估值、质量、动量、波动四个维度给股票打分。"
+    )
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("**工具用途**")
+        st.write("先筛候选，不是买卖指令。")
+    with col2:
+        st.markdown("**当前结论**")
+        st.write(f"{best['name']}：{best_signal}")
+    with col3:
+        st.markdown("**是否建议复核**")
+        st.write(review_tip)
+
+    st.link_button("看原理和教学（小红书）", XHS_NOTES_URL)
+
+    simple_display = top3[["code", "name", "signal_display", "risk_tag"]].rename(
         columns={
             "code": "代码",
             "name": "名称",
-            "score": "体检分",
-            "signal": "信号",
+            "signal_display": "结论",
             "risk_tag": "风险标签",
-            "return_60d": "近60日涨跌(%)",
-            "annual_volatility": "年化波动(%)",
-            "max_drawdown": "最大回撤(%)",
         }
     )
-    st.subheader("今日候选 Top 3（免费版仅展示前3只）")
-    st.dataframe(display, use_container_width=True, hide_index=True)
 
-    best = top3.iloc[0]
+    st.subheader("今日候选 Top 3（免费版仅展示前3只）")
+    st.dataframe(simple_display, use_container_width=True, hide_index=True)
+
     st.subheader("一句话解释")
-    st.success(
-        f"当前最优候选：{best['code']}（体检分 {best['score']}，{best['signal']}，{best['risk_tag']}）"
-    )
+    st.success(f"当前最优候选：{best['name']}（{best_signal}，{best['risk_tag']}）")
     st.write(best["explanation"])
 
-    with st.expander("查看四因子细分"):
-        st.write(
-            {
-                "估值得分": best["valuation_score"],
-                "质量得分": best["quality_score"],
-                "动量得分": best["momentum_score"],
-                "波动得分": best["volatility_score"],
-            }
-        )
+    with st.expander("进阶数据（想看原理再展开）", expanded=False):
+        st.markdown("#### 三项指标")
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric("近60日涨跌(%)", f"{best['return_60d']}")
+            st.caption(METRIC_HELP_TEXT["return_60d"])
+        with m2:
+            st.metric("年化波动(%)", f"{best['annual_volatility']}")
+            st.caption(METRIC_HELP_TEXT["annual_volatility"])
+        with m3:
+            st.metric("最大回撤(%)", f"{best['max_drawdown']}")
+            st.caption(METRIC_HELP_TEXT["max_drawdown"])
+
+        st.markdown("#### 四因子分数（0-100）")
+        factors = [
+            ("估值分", "valuation_score"),
+            ("质量分", "quality_score"),
+            ("动量分", "momentum_score"),
+            ("波动分", "volatility_score"),
+        ]
+        for label, field in factors:
+            score_value = float(best[field])
+            st.markdown(f"**{label}：{score_value:.1f} 分**")
+            st.progress(max(0.0, min(1.0, score_value / 100.0)))
+            st.caption(FACTOR_HELP_TEXT[field])
 
     if errors:
         st.info(f"有 {len(errors)} 只股票因数据问题跳过，不影响 Top 3 结果。")
-        st.code("\n".join(errors[:8]))
+        st.caption("为保证页面易读，技术报错已默认隐藏。")
 
     st.markdown("---")
     st.caption("完整版可解锁：完整榜单、结果导出、7天答疑与30天更新。")
