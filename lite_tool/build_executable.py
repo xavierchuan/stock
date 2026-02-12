@@ -29,6 +29,24 @@ def _data_sep() -> str:
     return ";" if os.name == "nt" else ":"
 
 
+def _add_data_args() -> list[str]:
+    sep = _data_sep()
+    data_files = [
+        LITE_DIR / "__init__.py",
+        LITE_DIR / "app.py",
+        LITE_DIR / "akshare_provider.py",
+        LITE_DIR / "config.py",
+        LITE_DIR / "limits.py",
+        LITE_DIR / "licensing.py",
+        LITE_DIR / "scoring.py",
+        LITE_DIR / "public_key.pem",
+    ]
+    args: list[str] = []
+    for f in data_files:
+        args.extend(["--add-data", f"{f}{sep}lite_tool"])
+    return args
+
+
 def _require_public_key() -> Path:
     key_path = LITE_DIR / "public_key.pem"
     if not key_path.exists():
@@ -50,7 +68,6 @@ def main() -> None:
     DIST_DIR.mkdir(parents=True, exist_ok=True)
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
-    add_data = f"{key_path}{_data_sep()}lite_tool"
     cmd = [
         sys.executable,
         "-m",
@@ -67,8 +84,7 @@ def main() -> None:
         str(BUILD_DIR),
         "--collect-all",
         "streamlit",
-        "--add-data",
-        add_data,
+        *_add_data_args(),
         str(LITE_DIR / "desktop_entry.py"),
     ]
 
@@ -79,4 +95,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
