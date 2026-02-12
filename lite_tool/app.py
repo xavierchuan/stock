@@ -52,6 +52,8 @@ st.markdown(
 )
 
 provider = AKShareProvider()
+MANUAL_UNIVERSE_LABEL = "我自己填股票代码"
+AUTO_UNIVERSE_LABEL = "系统帮我选（热门成交股票）"
 
 
 def require_license_enabled() -> bool:
@@ -133,15 +135,19 @@ if remaining <= 0:
 
 universe_mode = st.radio(
     "候选池来源",
-    options=["自选股票池", "自动候选池（按成交额）"],
+    options=[MANUAL_UNIVERSE_LABEL, AUTO_UNIVERSE_LABEL],
     index=1,
     horizontal=True,
 )
+if universe_mode == AUTO_UNIVERSE_LABEL:
+    st.caption("系统会先从当日成交活跃的股票里选一批，再帮你做体检。")
+else:
+    st.caption("只评估你输入的股票代码，更适合有明确关注名单的情况。")
 
 with st.form("lite_form"):
     input_codes = ""
     auto_limit = 20
-    if universe_mode == "自选股票池":
+    if universe_mode == MANUAL_UNIVERSE_LABEL:
         input_codes = st.text_area(
             "输入股票代码（最多30只，逗号/空格分隔）",
             value="600519 000858 600036 000333 601318 000001",
@@ -149,7 +155,7 @@ with st.form("lite_form"):
         )
     else:
         auto_limit = st.slider(
-            "自动候选池大小（免费版上限30只）",
+            "系统自动选股数量（免费版上限30只）",
             min_value=10,
             max_value=MAX_UNIVERSE_SIZE,
             value=20,
@@ -160,7 +166,7 @@ with st.form("lite_form"):
 
 if submitted:
     candidates: List[Candidate] = []
-    if universe_mode == "自选股票池":
+    if universe_mode == MANUAL_UNIVERSE_LABEL:
         codes = parse_codes(input_codes)
         if not codes:
             st.error("请至少输入1个合法A股代码（6位数字）。")
