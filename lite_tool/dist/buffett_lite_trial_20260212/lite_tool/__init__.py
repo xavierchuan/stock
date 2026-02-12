@@ -1,0 +1,2 @@
+"""Lite free product package."""
+

@@ -1,0 +1,4 @@
+week,test_name,variant_a,variant_b,metric,win_rule,sample_size_a,sample_size_b,result,winner,next_action
+W1,封面文案,3分钟股票体检,不写代码看战法分,评论率,评论率高者保留,0,0,PENDING,TBD,
+W1,关键词CTA,评论试用,评论工具,私信转化率,私信转化高者保留,0,0,PENDING,TBD,
+W2,结果页顺序,先展示综合分,先展示风险标签,19-39下单率,下单率高者保留,0,0,PENDING,TBD,

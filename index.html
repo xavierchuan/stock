@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>巴菲特战法（研究版）- 股票体检工具</title>
+  <meta name="description" content="不学量化，不写代码。3分钟看懂一个战法值不值得用。免费体验后再升级完整版。" />
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap");
+
+    :root {
+      --bg: #f6f8fa;
+      --bg-strong: #e8eef3;
+      --panel: #ffffff;
+      --panel-strong: #0f172a;
+      --text: #10243d;
+      --muted: #4e647f;
+      --brand: #12735f;
+      --brand-2: #f59e0b;
+      --danger: #c62828;
+      --ok: #1f7a1f;
+      --line: #d8e1ea;
+      --shadow: 0 14px 44px rgba(16, 36, 61, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, #d8efe8 0 18%, transparent 38%),
+        radial-gradient(circle at 85% 22%, #ffe8b7 0 10%, transparent 32%),
+        linear-gradient(180deg, var(--bg) 0%, #f3f6f9 100%);
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      padding: 14px 0;
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(10px);
+      background: rgba(246, 248, 250, 0.82);
+      border-bottom: 1px solid rgba(216, 225, 234, 0.8);
+      z-index: 20;
+    }
+
+    .topbar-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    .brand small {
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 8px;
+      font-weight: 500;
+    }
+
+    .nav-btn {
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, #0f766e, #12735f);
+      border: 1px solid #0c5e4d;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 20px rgba(16, 115, 95, 0.22);
+    }
+
+    .hero {
+      padding: 52px 0 34px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      color: #0c4e43;
+      background: #dcf6f0;
+      border: 1px solid #a3ded2;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5.8vw, 56px);
+      line-height: 1.05;
+      letter-spacing: -0.5px;
+      font-weight: 900;
+    }
+
+    .hero p {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: clamp(15px, 2vw, 18px);
+      line-height: 1.65;
+      max-width: 56ch;
+    }
+
+    .hero-actions {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      border-radius: 12px;
+      padding: 12px 16px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 14px;
+      transition: transform .2s ease, box-shadow .2s ease;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(135deg, #12735f, #0f766e);
+      box-shadow: 0 10px 22px rgba(16, 115, 95, .25);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .88);
+    }
+
+    .hero-card {
+      background: linear-gradient(165deg, #0f172a, #1f2937);
+      color: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(245, 158, 11, .28), transparent 70%);
+      top: -100px;
+      right: -60px;
+      pointer-events: none;
+    }
+
+    .card-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .card-table th,
+    .card-table td {
+      border-bottom: 1px solid rgba(255, 255, 255, .16);
+      padding: 8px 0;
+      text-align: left;
+    }
+
+    .signal {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.yellow { background: #fbbf24; }
+    .dot.red { background: #f87171; }
+    .dot.green { background: #4ade80; }
+
+    section {
+      padding: 22px 0;
+    }
+
+    .section-title {
+      margin: 0 0 16px;
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 900;
+      letter-spacing: -0.2px;
+    }
+
+    .section-desc {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(16, 36, 61, 0.06);
+    }
+
+    .panel h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .step {
+      background: linear-gradient(155deg, #fff, #eef4f8);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .step strong {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 26px;
+      color: var(--brand);
+      line-height: 1;
+    }
+
+    .step h4 {
+      margin: 8px 0 6px;
+      font-size: 17px;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .pricing {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .price-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .price-card.popular {
+      border: 2px solid #12735f;
+      box-shadow: 0 16px 34px rgba(18, 115, 95, .18);
+      transform: translateY(-4px);
+    }
+
+    .popular-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #12735f;
+      color: #fff;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .tier {
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .price {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 42px;
+      line-height: 1;
+      margin: 0 0 12px;
+      font-weight: 700;
+    }
+
+    .price small {
+      font-size: 14px;
+      color: var(--muted);
+      font-family: "Noto Sans SC", sans-serif;
+    }
+
+    .price-list {
+      list-style: none;
+      margin: 0 0 16px;
+      padding: 0;
+      display: grid;
+      gap: 9px;
+      font-size: 14px;
+      color: #20364f;
+    }
+
+    .price-list li::before {
+      content: "✓";
+      color: var(--ok);
+      font-weight: 900;
+      margin-right: 8px;
+    }
+
+    .note {
+      margin-top: 6px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #f2d08a;
+      background: #fff7e2;
+      color: #7f5b14;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .compare-wrap {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(16, 36, 61, 0.06);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .compare-table th,
+    .compare-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .compare-table thead th {
+      background: #eff5fb;
+      font-weight: 800;
+    }
+
+    .compare-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .compare-yes {
+      color: #1f7a1f;
+      font-weight: 700;
+    }
+
+    .compare-no {
+      color: #c62828;
+      font-weight: 700;
+    }
+
+    .faq {
+      display: grid;
+      gap: 10px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    details p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .cta {
+      margin: 26px 0 34px;
+      background: linear-gradient(145deg, #122033, #1b2f4b);
+      color: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .cta h3 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing: -0.2px;
+    }
+
+    .cta p {
+      margin: 0;
+      color: rgba(255, 255, 255, .82);
+    }
+
+    .footer {
+      padding: 10px 0 34px;
+      color: #6a7f95;
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: .5s ease;
+    }
+
+    .reveal.on {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 980px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .grid,
+      .steps,
+      .pricing {
+        grid-template-columns: 1fr;
+      }
+
+      .cta {
+        grid-template-columns: 1fr;
+      }
+
+      .price-card.popular {
+        transform: none;
+      }
+
+      .compare-wrap {
+        overflow-x: auto;
+      }
+
+      .compare-table {
+        min-width: 640px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">Factor Lab<small>巴菲特战法（研究版）</small></div>
+      <a class="nav-btn" href="#buy">评论领试用</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <span class="badge">免费体验已开放 · 本地研究工具</span>
+        <h1>不学量化，<br />3分钟做完一份股票体检</h1>
+        <p>
+          选择战法，点击运行，系统自动给出综合分、风险标签和一句人话解释。你不需要写代码，
+          也不需要配置复杂参数。小红书评论区输入“试用”，即可领取体验版。
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#buy">评论“试用”领取免费版</a>
+          <a class="btn btn-secondary" href="#plans">查看版本与价格</a>
+        </div>
+      </div>
+      <aside class="hero-card reveal">
+        <div style="font-size:13px;color:rgba(255,255,255,.75);">示例：今日体检结果</div>
+        <table class="card-table">
+          <thead>
+            <tr>
+              <th>股票</th>
+              <th>回撤</th>
+              <th>RSI</th>
+              <th>PE分位</th>
+              <th>信号</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>MSFT</td>
+              <td>-24.1%</td>
+              <td>42.5</td>
+              <td>10%</td>
+              <td><span class="signal"><span class="dot yellow"></span>观察</span></td>
+            </tr>
+            <tr>
+              <td>GOOGL</td>
+              <td>-8.8%</td>
+              <td>39.8</td>
+              <td>83%</td>
+              <td><span class="signal"><span class="dot yellow"></span>观察</span></td>
+            </tr>
+            <tr>
+              <td>AAPL</td>
+              <td>-5.2%</td>
+              <td>81.2</td>
+              <td>87%</td>
+              <td><span class="signal"><span class="dot red"></span>偏贵</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin:12px 0 0;color:rgba(255,255,255,.82);font-size:13px;line-height:1.55;">
+          结论：MSFT综合分最高（72），但需关注波动风险。失效条件：RSI > 70 或跌破20日线。
+        </p>
+      </aside>
+    </section>
+
+    <section class="reveal">
+      <h2 class="section-title">你会得到什么</h2>
+      <p class="section-desc">不是荐股，不是喊单。是一个帮你更快完成研究判断的工作流。</p>
+      <div class="grid">
+        <article class="panel">
+          <h3>因子体检分</h3>
+          <p>四因子综合评分（估值/质量/动量/波动），输出 0-100 分和可解释结论。</p>
+        </article>
+        <article class="panel">
+          <h3>后台回测结果</h3>
+          <p>展示年化、回撤、波动、净值曲线，不再手工拼表格。</p>
+        </article>
+        <article class="panel">
+          <h3>策略模板化</h3>
+          <p>内置巴菲特战法，可扩展多战法组合，适合持续复盘。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2 class="section-title">3步上手</h2>
+      <div class="steps">
+        <div class="step">
+          <strong>01</strong>
+          <h4>领取免费版</h4>
+          <p>在小红书评论区输入“试用”，私信领取体验版和上手清单。</p>
+        </div>
+        <div class="step">
+          <strong>02</strong>
+          <h4>选择巴菲特战法</h4>
+          <p>点运行即可自动计算体检分、信号标签和风险提示。</p>
+        </div>
+        <div class="step">
+          <strong>03</strong>
+          <h4>按结果升级</h4>
+          <p>如果你需要完整榜单、结果导出和持续答疑，再升级研究版即可。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2 class="section-title">小红书闭环路径</h2>
+      <p class="section-desc">优先站内转化：笔记评论领取试用，不做站外复杂跳转。</p>
+      <div class="grid">
+        <article class="panel">
+          <h3>笔记引流</h3>
+          <p>发布结果截图和教程图文，每条都固定CTA：评论“试用”。</p>
+        </article>
+        <article class="panel">
+          <h3>私信发试用</h3>
+          <p>5分钟内私信发体验版链接、3步上手图和免责声明。</p>
+        </article>
+        <article class="panel">
+          <h3>低价承接</h3>
+          <p>24小时未跑通时承接39元安装答疑，再升级299研究版。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="plans" class="reveal">
+      <h2 class="section-title">版本与价格</h2>
+      <p class="section-desc">先免费体验，再按使用深度升级。免费版固定限制：1战法、每天3次、仅前3只候选。</p>
+      <div class="pricing">
+        <article class="price-card">
+          <div class="tier">巴菲特战法 Lite 体验版</div>
+          <p class="price">¥0 <small>/立即领取</small></p>
+          <ul class="price-list">
+            <li>1个战法（巴菲特）</li>
+            <li>每天最多3次运行</li>
+            <li>基础体检结果页（无导出）</li>
+            <li>仅显示前3只候选</li>
+          </ul>
+          <a class="btn btn-secondary" href="#buy">领取试用</a>
+        </article>
+
+        <article class="price-card popular">
+          <span class="popular-tag">推荐</span>
+          <div class="tier">主商品（研究版）</div>
+          <p class="price">¥299 <small>/一次性买断</small></p>
+          <ul class="price-list">
+            <li>完整巴菲特战法工具</li>
+            <li>完整榜单与结果导出</li>
+            <li>使用说明 + 7天答疑</li>
+            <li>30天小版本更新</li>
+          </ul>
+          <a class="btn btn-primary" href="#buy">购买研究版</a>
+        </article>
+
+        <article class="price-card">
+          <div class="tier">升级款（增强包）</div>
+          <p class="price">¥599 <small>/进阶用户</small></p>
+          <ul class="price-list">
+            <li>3套策略模板</li>
+            <li>组合对比回测</li>
+            <li>30天参数更新</li>
+            <li>30天答疑支持</li>
+          </ul>
+          <a class="btn btn-secondary" href="#buy">购买增强包</a>
+        </article>
+      </div>
+      <div class="note">
+        提示：仅供研究与教育用途，不构成投资建议，不承诺收益。
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2 class="section-title">为什么要升级研究版</h2>
+      <p class="section-desc">当你需要完整榜单、结果导出和持续答疑时，建议从免费版升级到299研究版。</p>
+      <div class="compare-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>能力项</th>
+              <th>Lite 体验版（免费）</th>
+              <th>研究版（299）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>战法数量</td>
+              <td>仅巴菲特战法 1 套</td>
+              <td>完整巴菲特战法工具</td>
+            </tr>
+            <tr>
+              <td>每日运行次数</td>
+              <td>最多 3 次</td>
+              <td class="compare-yes">不限（按本地性能）</td>
+            </tr>
+            <tr>
+              <td>候选展示范围</td>
+              <td>仅前 3 只候选</td>
+              <td class="compare-yes">完整榜单</td>
+            </tr>
+            <tr>
+              <td>结果导出</td>
+              <td class="compare-no">不支持</td>
+              <td class="compare-yes">支持</td>
+            </tr>
+            <tr>
+              <td>使用支持</td>
+              <td>基础上手说明</td>
+              <td>7天答疑 + 30天小版本更新</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <h2 class="section-title">常见问题</h2>
+      <div class="faq">
+        <details>
+          <summary>这个工具会直接告诉我买卖点吗？</summary>
+          <p>不会。它输出的是研究评分和风险解释，帮助你独立判断。</p>
+        </details>
+        <details>
+          <summary>19-39元服务单到底是什么？</summary>
+          <p>是安装答疑与参数初始化服务，包含首次运行排障，不包含荐股服务。</p>
+        </details>
+        <details>
+          <summary>免费版为什么会有次数和展示限制？</summary>
+          <p>免费版用于体验流程，帮你先验证是否适合。需要完整榜单和导出功能时再升级研究版。</p>
+        </details>
+        <details>
+          <summary>我需要会编程吗？</summary>
+          <p>不需要，普通用户按说明操作即可。你只要会输入股票代码。</p>
+        </details>
+      </div>
+    </section>
+
+    <section id="buy" class="cta reveal">
+      <div>
+        <h3>现在就去小红书：评论“试用”领取体验版</h3>
+        <p>把按钮替换成你的店铺链接。先用评论+私信拿线索，再承接39元服务单。</p>
+      </div>
+      <a class="btn btn-primary" href="https://www.xiaohongshu.com/" target="_blank" rel="noopener noreferrer">打开小红书店铺</a>
+    </section>
+
+    <footer class="footer">
+      <div>© 2026 Factor Lab. All rights reserved.</div>
+      <div>免责声明：本页面及工具内容仅供研究与教育用途，不构成投资建议，不承诺收益。</div>
+    </footer>
+  </main>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("on");
+        }
+      });
+    }, { threshold: 0.2 });
+
+    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+  </script>
+</body>
+</html>

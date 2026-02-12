@@ -1,0 +1,2 @@
+lead_id,date,post_id,keyword,first_reply_time,status,trial_id,trial_sent,trial_link_sent_at,opened_success,trial_opened_at,runs_day1,limit_hit,limit_hit_at,followup_24h,offer_shown,tripwire_paid,main_paid,refund_flag,notes
+L001,2026-02-12,P001,试用,2026-02-12 10:03,NEW,T20260212-001,0,,0,,0,0,,0,none,0,0,0,

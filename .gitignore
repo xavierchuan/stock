@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+.pytest_cache/
+
+# Local caches and generated artifacts
+lite_tool/dist/staging/
+*.log
+
