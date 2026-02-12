@@ -24,6 +24,8 @@ def main() -> None:
         str(app_path),
         "--server.port",
         "8510",
+        "--client.toolbarMode",
+        "minimal",
         "--browser.gatherUsageStats",
         "false",
     ]
@@ -32,4 +34,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

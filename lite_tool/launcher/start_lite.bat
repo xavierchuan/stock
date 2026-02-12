@@ -30,6 +30,6 @@ if errorlevel 1 (
 )
 
 echo 正在启动巴菲特战法 Lite 体验版...
-"%VENV_DIR%\Scripts\python.exe" -m streamlit run "%PROJECT_ROOT%\lite_tool\app.py" --server.port 8510
+"%VENV_DIR%\Scripts\python.exe" -m streamlit run "%PROJECT_ROOT%\lite_tool\app.py" --server.port 8510 --client.toolbarMode minimal --browser.gatherUsageStats false
 
 endlocal

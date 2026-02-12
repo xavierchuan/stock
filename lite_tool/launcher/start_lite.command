@@ -21,5 +21,4 @@ if ! "$VENV_DIR/bin/python" -c "import akshare,streamlit,pandas,numpy" >/dev/nul
 fi
 
 echo "正在启动巴菲特战法 Lite 体验版..."
-"$VENV_DIR/bin/python" -m streamlit run "$PROJECT_ROOT/lite_tool/app.py" --server.port 8510
-
+"$VENV_DIR/bin/python" -m streamlit run "$PROJECT_ROOT/lite_tool/app.py" --server.port 8510 --client.toolbarMode minimal --browser.gatherUsageStats false

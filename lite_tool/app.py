@@ -29,6 +29,19 @@ from lite_tool.scoring import evaluate_candidate
 
 st.set_page_config(page_title=PRODUCT_NAME, layout="wide")
 
+# Hide Streamlit chrome (toolbar/menu/deploy) for end users.
+st.markdown(
+    """
+    <style>
+      [data-testid="stToolbar"] { display: none !important; }
+      [data-testid="stDecoration"] { display: none !important; }
+      #MainMenu { visibility: hidden !important; }
+      footer { visibility: hidden !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 provider = AKShareProvider()
 
 
