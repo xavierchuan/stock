@@ -162,9 +162,13 @@ with st.form("lite_form"):
             step=5,
         )
     submitted = st.form_submit_button("运行 Lite 体检（消耗1次）", type="primary")
+    st.caption("点击后会进入处理中（约30-60秒），请勿重复点击。")
 
 
 if submitted:
+    run_status = st.status("正在处理，请勿重复点击", expanded=True)
+    run_status.write("步骤1/3：准备候选池")
+
     candidates: List[Candidate] = []
     if universe_mode == MANUAL_UNIVERSE_LABEL:
         codes = parse_codes(input_codes)
@@ -190,13 +194,16 @@ if submitted:
             with st.spinner("正在获取热门候选股票，首次可能需要30-60秒，请稍等..."):
                 candidates = cached_auto_candidates(limit=auto_limit)
         except DataProviderError:
+            run_status.update(label="处理失败", state="error", expanded=True)
             st.error("暂时没拿到自动候选池数据，请稍后重试。")
             st.stop()
         except Exception:  # pragma: no cover
+            run_status.update(label="处理失败", state="error", expanded=True)
             st.error("自动候选池加载失败，请稍后重试。")
             st.stop()
 
     st.write(f"本次候选池数量：{len(candidates)}")
+    run_status.write("步骤2/3：计算体检结果")
     progress = st.progress(0)
     results = []
     errors = []
@@ -210,6 +217,7 @@ if submitted:
         progress.progress((i + 1) / len(candidates))
 
     if not results:
+        run_status.update(label="处理失败", state="error", expanded=True)
         st.error("本次未生成有效结果，请稍后重试。")
         if errors:
             st.info("本次数据源波动较大，建议稍后重试。")
@@ -293,6 +301,9 @@ if submitted:
     if errors:
         st.info(f"有 {len(errors)} 只股票因数据问题跳过，不影响 Top 3 结果。")
         st.caption("为保证页面易读，技术报错已默认隐藏。")
+
+    run_status.write("步骤3/3：结果已生成")
+    run_status.update(label="处理完成", state="complete", expanded=False)
 
     st.markdown("---")
     st.caption("完整版可解锁：完整榜单、结果导出、7天答疑与30天更新。")
