@@ -3,12 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
+import random
 import time
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 
 import pandas as pd
 
-from .config import HISTORY_LOOKBACK_DAYS, MIN_HISTORY_BARS
+from .config import FETCH_RETRIES, HISTORY_LOOKBACK_DAYS, MIN_HISTORY_BARS, RETRY_BASE_WAIT_SECONDS
 from .config import CACHE_DIR
 
 
@@ -39,8 +40,25 @@ class Candidate:
     name: str
 
 
+def classify_error(exc: Exception) -> str:
+    msg = str(exc).lower()
+    network_signals = [
+        "connection",
+        "timeout",
+        "timed out",
+        "remote end closed",
+        "ssl",
+        "max retries",
+        "http",
+        "temporarily unavailable",
+    ]
+    return "network" if any(sig in msg for sig in network_signals) else "data"
+
+
 def _call_with_retry(
-    call: Callable[[], Any], retries: int = 3, wait_seconds: float = 1.2
+    call: Callable[[], Any],
+    retries: int = FETCH_RETRIES,
+    wait_seconds: float = RETRY_BASE_WAIT_SECONDS,
 ) -> Any:
     last_error: Exception | None = None
     for attempt in range(1, retries + 1):
@@ -49,7 +67,9 @@ def _call_with_retry(
         except Exception as exc:  # pragma: no cover
             last_error = exc
             if attempt < retries:
-                time.sleep(wait_seconds * attempt)
+                backoff = wait_seconds * (2 ** (attempt - 1))
+                jitter = random.uniform(0.0, wait_seconds * 0.5)
+                time.sleep(backoff + jitter)
     if last_error is None:
         raise DataProviderError("未知数据错误。")
     raise DataProviderError(str(last_error)) from last_error
@@ -298,3 +318,10 @@ class AKShareProvider:
         hist = hist.tail(HISTORY_LOOKBACK_DAYS).reset_index(drop=True)
         hist.to_csv(cache_path, index=False, encoding="utf-8")
         return hist
+
+    def get_history_safe(self, symbol: str) -> Tuple[pd.DataFrame | None, str | None, str | None]:
+        try:
+            hist = self.get_history(symbol)
+            return hist, None, None
+        except Exception as exc:
+            return None, classify_error(exc), str(exc)

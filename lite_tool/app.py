@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import time
 from pathlib import Path
 from typing import Dict, List
 
@@ -16,12 +17,16 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from lite_tool.akshare_provider import AKShareProvider, Candidate, DataProviderError
 from lite_tool.config import (
+    AUTO_FILL_POOL_SIZE,
+    AUTO_FILL_TARGET,
     DISCLAIMER,
     FACTOR_HELP_TEXT,
     MAX_DAILY_RUNS,
     MAX_UNIVERSE_SIZE,
     METRIC_HELP_TEXT,
+    MIN_SUCCESS_TO_CHARGE,
     PRODUCT_NAME,
+    RUNTIME_BUDGET_SECONDS,
     SIGNAL_DISPLAY_MAP,
     XHS_NOTES_URL,
 )
@@ -42,10 +47,34 @@ st.set_page_config(page_title=PRODUCT_NAME, layout="wide")
 st.markdown(
     """
     <style>
+      .stApp {
+        background: radial-gradient(circle at 5% 0%, #f6fbff 0%, #f9fbfd 35%, #ffffff 100%);
+      }
       [data-testid="stToolbar"] { display: none !important; }
       [data-testid="stDecoration"] { display: none !important; }
       #MainMenu { visibility: hidden !important; }
       footer { visibility: hidden !important; }
+      [data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #e6edf5;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      div[data-testid="stStatusWidget"] {
+        border: 1px solid #dbe7f5;
+        border-radius: 12px;
+      }
+      div.stButton > button:first-child,
+      div[data-testid="stFormSubmitButton"] > button:first-child {
+        border-radius: 10px;
+        font-weight: 700;
+      }
+      .note-card {
+        background: #ffffff;
+        border: 1px solid #e6edf5;
+        border-radius: 12px;
+        padding: 12px 14px;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -128,6 +157,7 @@ else:
 
 remaining = runs_remaining()
 st.metric("今日剩余运行次数", f"{remaining}/{MAX_DAILY_RUNS}")
+debug_mode = st.toggle("调试模式（显示原始报错）", value=False)
 
 if remaining <= 0:
     st.error("今天的免费运行次数已用完。明天会自动恢复3次。")
@@ -169,10 +199,18 @@ if submitted:
     run_status = st.status("正在处理，请勿重复点击", expanded=True)
     run_status.write("步骤1/3：准备候选池")
 
+    started_at = time.time()
+    budget_exhausted = False
     candidates: List[Candidate] = []
+    errors: List[str] = []
+    attempted_codes = set()
+    network_fail_count = 0
+    data_fail_count = 0
+
     if universe_mode == MANUAL_UNIVERSE_LABEL:
         codes = parse_codes(input_codes)
         if not codes:
+            run_status.update(label="处理失败", state="error", expanded=True)
             st.error("请至少输入1个合法A股代码（6位数字）。")
             st.stop()
         if len(codes) > MAX_UNIVERSE_SIZE:
@@ -202,28 +240,100 @@ if submitted:
             st.error("自动候选池加载失败，请稍后重试。")
             st.stop()
 
+    if not candidates:
+        run_status.update(label="处理失败", state="error", expanded=True)
+        st.error("本次未获得可用候选池，请稍后重试。")
+        st.stop()
+
     st.write(f"本次候选池数量：{len(candidates)}")
     run_status.write("步骤2/3：计算体检结果")
     progress = st.progress(0)
     results = []
-    errors = []
-    for i, cand in enumerate(candidates):
+
+    processed_count = 0
+    expected_count = len(candidates)
+    for cand in candidates:
+        if time.time() - started_at > RUNTIME_BUDGET_SECONDS:
+            budget_exhausted = True
+            break
+        processed_count += 1
+        attempted_codes.add(cand.code)
+        hist, err_type, err_text = provider.get_history_safe(cand.code)
+        if hist is None:
+            if err_type == "network":
+                network_fail_count += 1
+            else:
+                data_fail_count += 1
+            errors.append(f"{cand.code} 失败: {err_text}")
+            progress.progress(min(processed_count / max(expected_count, 1), 1.0))
+            continue
         try:
-            hist = cached_history(cand.code)
             result = evaluate_candidate(cand.code, cand.name, hist)
             results.append(result.to_dict())
         except Exception as exc:
-            errors.append(f"{cand.code} 失败: {exc}")
-        progress.progress((i + 1) / len(candidates))
+            data_fail_count += 1
+            errors.append(f"{cand.code} 评分失败: {exc}")
+        progress.progress(min(processed_count / max(expected_count, 1), 1.0))
+
+    if (
+        universe_mode == MANUAL_UNIVERSE_LABEL
+        and len(results) < AUTO_FILL_TARGET
+        and not budget_exhausted
+    ):
+        run_status.write("步骤2/3：自选结果不足3只，正在自动补位")
+        try:
+            supplement_pool = cached_auto_candidates(limit=min(MAX_UNIVERSE_SIZE, AUTO_FILL_POOL_SIZE))
+        except Exception:
+            supplement_pool = []
+        supplement_candidates = [c for c in supplement_pool if c.code not in attempted_codes]
+        needed = AUTO_FILL_TARGET - len(results)
+        expected_count += min(len(supplement_candidates), max(needed, 0))
+        for cand in supplement_candidates:
+            if needed <= 0:
+                break
+            if time.time() - started_at > RUNTIME_BUDGET_SECONDS:
+                budget_exhausted = True
+                break
+            processed_count += 1
+            attempted_codes.add(cand.code)
+            hist, err_type, err_text = provider.get_history_safe(cand.code)
+            if hist is None:
+                if err_type == "network":
+                    network_fail_count += 1
+                else:
+                    data_fail_count += 1
+                errors.append(f"{cand.code} 补位失败: {err_text}")
+                progress.progress(min(processed_count / max(expected_count, 1), 1.0))
+                continue
+            try:
+                result = evaluate_candidate(cand.code, cand.name, hist)
+                results.append(result.to_dict())
+                needed -= 1
+            except Exception as exc:
+                data_fail_count += 1
+                errors.append(f"{cand.code} 补位评分失败: {exc}")
+            progress.progress(min(processed_count / max(expected_count, 1), 1.0))
 
     if not results:
         run_status.update(label="处理失败", state="error", expanded=True)
         st.error("本次未生成有效结果，请稍后重试。")
         if errors:
             st.info("本次数据源波动较大，建议稍后重试。")
+            if debug_mode:
+                st.code("\n".join(errors[:12]))
         st.stop()
 
-    consume_run()
+    success_count = len(results)
+    failed_count = len(errors)
+    attempted_count = success_count + failed_count
+
+    charged = success_count >= MIN_SUCCESS_TO_CHARGE
+    if charged:
+        consume_run()
+    else:
+        st.warning(
+            f"本次仅成功 {success_count} 只，未达到{MIN_SUCCESS_TO_CHARGE}只，不扣次数。可稍后重试。"
+        )
 
     df = pd.DataFrame(results).sort_values("score", ascending=False).reset_index(drop=True)
     top3 = df.head(3).copy()
@@ -243,7 +353,7 @@ if submitted:
         "巴菲特战法 Lite 是一个巴菲特风格的简化体检：用估值、质量、动量、波动四个维度给股票打分。"
     )
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown("**工具用途**")
         st.write("先筛候选，不是买卖指令。")
@@ -253,6 +363,9 @@ if submitted:
     with col3:
         st.markdown("**是否建议复核**")
         st.write(review_tip)
+    with col4:
+        st.markdown("**本次计次**")
+        st.write("已扣1次" if charged else "未扣次数")
 
     st.link_button("看原理和教学（小红书）", XHS_NOTES_URL)
 
@@ -267,6 +380,11 @@ if submitted:
 
     st.subheader("今日候选 Top 3（免费版仅展示前3只）")
     st.dataframe(simple_display, use_container_width=True, hide_index=True)
+
+    s1, s2, s3 = st.columns(3)
+    s1.metric("尝试评估", attempted_count)
+    s2.metric("成功", success_count)
+    s3.metric("跳过", failed_count)
 
     st.subheader("一句话解释")
     st.success(f"当前最优候选：{best['name']}（{best_signal}，{best['risk_tag']}）")
@@ -298,9 +416,19 @@ if submitted:
             st.progress(max(0.0, min(1.0, score_value / 100.0)))
             st.caption(FACTOR_HELP_TEXT[field])
 
+        st.markdown("#### 本次处理摘要")
+        st.caption(
+            f"网络问题跳过 {network_fail_count} 只，数据问题跳过 {data_fail_count} 只。"
+        )
+        if budget_exhausted:
+            st.warning(f"已触发 {RUNTIME_BUDGET_SECONDS} 秒处理预算，提前结束本次运行。")
+        if debug_mode and errors:
+            st.code("\n".join(errors[:12]))
+
     if errors:
         st.info(f"有 {len(errors)} 只股票因数据问题跳过，不影响 Top 3 结果。")
-        st.caption("为保证页面易读，技术报错已默认隐藏。")
+        if not debug_mode:
+            st.caption("为保证页面易读，技术报错已默认隐藏。")
 
     run_status.write("步骤3/3：结果已生成")
     run_status.update(label="处理完成", state="complete", expanded=False)
