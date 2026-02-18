@@ -49,6 +49,20 @@ st.markdown(
     <style>
       .stApp {
         background: radial-gradient(circle at 5% 0%, #f6fbff 0%, #f9fbfd 35%, #ffffff 100%);
+        color: #0f172a !important;
+      }
+      .stApp p,
+      .stApp span,
+      .stApp label,
+      .stApp li,
+      .stApp h1,
+      .stApp h2,
+      .stApp h3,
+      .stApp h4,
+      .stApp h5,
+      .stApp h6,
+      .stApp div[data-testid="stMarkdownContainer"] {
+        color: #0f172a !important;
       }
       [data-testid="stToolbar"] { display: none !important; }
       [data-testid="stDecoration"] { display: none !important; }
